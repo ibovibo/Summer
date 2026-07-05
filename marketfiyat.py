@@ -1,5 +1,6 @@
 import requests
 import json
+import pandas as pd
 
 url = 'https://api.marketfiyati.org.tr/api/v2/searchByCategories'
 
@@ -30,7 +31,7 @@ headers ={
 payload = {
     "keywords": "Süt Ürünleri ve Kahvaltılık",
     "pages": 0,
-    "size": 24,
+    "size": 25,
     "menuCategory": True,
     "latitude": 41.0014154263743,
     "longitude": 39.7015262711726,
@@ -46,16 +47,33 @@ payload = {
 ]
 }
 
-r = requests.post(url, json=payload, headers=headers)
+# ORNEK — sayfalama mantigi
+tum_urunler = []
 
-print(r.status_code)
-
-data = r.json()
-# print(data["content"][0]["title"])
-print(r.text[:500])  # kac urun buldu
-print(len(data["content"]))   # listedeki eleman sayisi
-
-
-
+for sayfa in range(65):   # 3 sayfa cek
+    payload["pages"] = sayfa
+    r = requests.post(url, json=payload, headers=headers)
+    veri = r.json()
+    tum_urunler.extend(veri["content"])   # listeyi listeye ekle
+   
 
 
+df = pd.DataFrame(tum_urunler)
+
+peynur = df[df["title"].str.contains("peynir", case = False)]
+
+
+def en_ucuz(peynirler):
+    fiyatlar = [n["price"] for n in peynirler]
+    return min(fiyatlar)
+
+
+peynur["fiyat"] = peynur["productDepotInfoList"].apply(en_ucuz)
+# print(peynur[["title", "fiyat"]])
+
+
+filtrele_min = float(input("min fiyat"))
+filtrele_max = float(input("max fiyat"))
+
+filtre_sonuc = peynur[(peynur["fiyat"] >= filtrele_min) & (peynur["fiyat"] <= filtrele_max)]
+print(filtre_sonuc[["title", "fiyat"]])
