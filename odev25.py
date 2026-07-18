@@ -24,11 +24,23 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_
 model = RandomForestClassifier(random_state=67)
 model.fit(x_train, y_train)
 
-onem = pd.Series(model.feature_importances_, index = x.columns).sort_values(ascending=False)
+
+yeni_yolcu = pd.DataFrame({
+    "Pclass": [3,1],
+    "Sex":[0,1],
+    "Age":[8,23],
+    "SibSp":[1,1],
+    "Parch":[1,1],
+    "Fare":[18,18],
+    "Embarked":[3,3]
+   
+})
+
 
 
 tahmin = model.predict(x_test)       
 olasilik = model.predict_proba(x_test)[:, 1]
+olasilik_yeni = model.predict_proba(yeni_yolcu)[:, 1]
 gercek = y_test.values
 
 ort = cross_val_score(model, x, y, cv=5)
@@ -38,11 +50,5 @@ tablo = pd.DataFrame({
     "olasilik": olasilik,
 })
 
-yeni_tahmin = (olasilik > 0.30).astype(int)
+print(olasilik_yeni)
 
-# print(tablo[:20].round(3))
-# print(onem.round(3))
-# print(ort.round(3))
-# print(round(ort.mean(), 3))
-print(classification_report(y_test, tahmin))
-print(classification_report(y_test, yeni_tahmin))
